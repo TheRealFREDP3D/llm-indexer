@@ -175,3 +175,8 @@ cython_debug/
 .idx/dev.nix
 .vscode/repo.code-workspace
 .vscode/settings.json
+.snapshots/config.json
+.snapshots/readme.md
+.vscode/.code-workspace.code-workspace
+.snapshots/sponsors.md
+.gitignore
