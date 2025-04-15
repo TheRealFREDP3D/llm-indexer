@@ -173,3 +173,14 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 .qodo
+node_modules
+/node_modules
+/.env
+/.vscode
+package-lock.json
+.gitignore
+package.json
+/.history
+/.roo
+/.snapshots
+/_DEV_NOTES
