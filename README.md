@@ -54,7 +54,7 @@ _No diagrams generated as the changes look simple and do not need a visual repre
 
 #### Customizing Your Experience
 
-Access your [dashboard](https://app.sourcery.ai) to:
+Access your [dashboard](https://app.sourcery.ai) to.
 - Enable or disable review features such as the Sourcery-generated pull request
   summary, the reviewer's guide, and others.
 - Change the review language.
