@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block title %}Chat View - LLM Chat Indexer{% endblock %}
+
+{% block extra_css %}
+<!-- Vis.js for graph visualization -->
+<link rel="stylesheet" href="https://unpkg.com/vis-network/dist/dist/vis-network.min.css">
+<style>
+    #knowledge-graph {
+        width: 100%;
+        height: 500px;
+        border: 1px solid #ddd;
+        background-color: #f8f9fa;
+    }
+    .chat-message {
+        margin-bottom: 15px;
+        padding: 10px 15px;
+        border-radius: 10px;
+    }
+    .user-message {
+        background-color: #e9ecef;
+        margin-right: 20%;
+    }
+    .assistant-message {
+        background-color: #d1e7ff;
+        margin-left: 20%;
+    }
+    .message-role {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    .summary-section {
+        display: none;
+    }
+    .summary-section.active {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-3">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                <li class="breadcrumb-item active">Chat {{ chat_id[:8] }}...</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Chat Content Column -->
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Chat {{ chat_id[:8] }}...</h5>
+                <div>
+                    <button class="btn btn-sm btn-light" id="btn-search-this-chat">
+                        <i class="fas fa-search"></i> Search in this chat
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="chat-content">
+                    <!-- This would be populated with actual chat messages -->
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-comments fa-3x mb-3"></i>
+                        <p>Chat content would be displayed here.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Column -->
+    <div class="col-md-4">
+        <!-- Summary Card -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">Summaries</h5>
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs" id="summaryTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="gist-tab" data-bs-toggle="tab" data-bs-target="#gist" type="button" role="tab">Gist</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="key-points-tab" data-bs-toggle="tab" data-bs-target="#key-points" type="button" role="tab">Key Points</button>
+                    </li>
+                </ul>
+                <div class="tab-content mt-3" id="summaryTabContent">
+                    <div class="tab-pane fade show active" id="gist" role="tabpanel">
+                        <div id="gist-summary" class="summary-content">
+                            <div class="text-center">
+                                <button class="btn btn-sm btn-outline-primary generate-summary" data-type="gist">
+                                    <i class="fas fa-magic"></i> Generate Gist
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="key-points" role="tabpanel">
+                        <div id="key-points-summary" class="summary-content">
+                            <div class="text-center">
+                                <button class="btn btn-sm btn-outline-primary generate-summary" data-type="key_points">
+                                    <i class="fas fa-list"></i> Generate Key Points
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Knowledge Graph Card -->
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">Knowledge Graph</h5>
+            </div>
+            <div class="card-body">
+                <div id="knowledge-graph"></div>
+                <div class="mt-2 text-center">
+                    <button class="btn btn-sm btn-outline-success" id="btn-load-graph">
+                        <i class="fas fa-project-diagram"></i> Load Graph
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search Modal -->
+<div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="searchModalLabel">Search in This Chat</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('search_chats') }}" method="get">
+                    <input type="hidden" name="chat_id" value="{{ chat_id }}">
+                    <div class="mb-3">
+                        <label for="query" class="form-label">Search Query</label>
+                        <input type="text" class="form-control" id="query" name="query" placeholder="Enter your search query..." required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Vis.js for graph visualization -->
+<script src="https://unpkg.com/vis-network/dist/dist/vis-network.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Search in this chat button
+        $('#btn-search-this-chat').click(function() {
+            $('#searchModal').modal('show');
+        });
+
+        // Generate summary buttons
+        $('.generate-summary').click(function() {
+            const summaryType = $(this).data('type');
+            const summaryElement = $(this).closest('.summary-content');
+
+            // Show loading indicator
+            summaryElement.html('<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2">Generating summary...</p></div>');
+
+            // Make AJAX request to get summary
+            $.ajax({
+                url: `/summary/{{ chat_id }}?type=${summaryType}`,
+                method: 'GET',
+                success: function(data) {
+                    if (data.summary) {
+                        summaryElement.html(`<div class="summary-text">${data.summary}</div>`);
+                    } else {
+                        summaryElement.html(`<div class="alert alert-warning">Failed to generate summary.</div>`);
+                    }
+                },
+                error: function() {
+                    summaryElement.html(`<div class="alert alert-danger">Error generating summary.</div><div class="text-center mt-2"><button class="btn btn-sm btn-outline-primary generate-summary" data-type="${summaryType}">Try Again</button></div>`);
+                }
+            });
+        });
+
+        // Load knowledge graph
+        $('#btn-load-graph').click(function() {
+            const graphContainer = document.getElementById('knowledge-graph');
+            $(this).prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...');
+
+            // Make AJAX request to get graph data
+            $.ajax({
+                url: `/api/graph/{{ chat_id }}?format=cytoscape`,
+                method: 'GET',
+                success: function(data) {
+                    if (data && data.elements) {
+                        // Create network visualization
+                        const nodes = [];
+                        const edges = [];
+
+                        // Process nodes
+                        data.elements.forEach(function(element) {
+                            if (element.data.source === undefined) {
+                                // This is a node
+                                nodes.push({
+                                    id: element.data.id,
+                                    label: element.data.label || element.data.id,
+                                    group: element.data.type || 'unknown'
+                                });
+                            } else {
+                                // This is an edge
+                                edges.push({
+                                    from: element.data.source,
+                                    to: element.data.target,
+                                    label: element.data.predicate || '',
+                                    arrows: 'to'
+                                });
+                            }
+                        });
+
+                        // Create the network
+                        const networkData = {
+                            nodes: new vis.DataSet(nodes),
+                            edges: new vis.DataSet(edges)
+                        };
+
+                        const options = {
+                            nodes: {
+                                shape: 'dot',
+                                size: 16,
+                                font: {
+                                    size: 12,
+                                    face: 'Tahoma'
+                                }
+                            },
+                            edges: {
+                                width: 1,
+                                font: {
+                                    size: 10,
+                                    align: 'middle'
+                                },
+                                smooth: {
+                                    type: 'continuous'
+                                }
+                            },
+                            physics: {
+                                stabilization: true,
+                                barnesHut: {
+                                    gravitationalConstant: -80,
+                                    springConstant: 0.001,
+                                    springLength: 200
+                                }
+                            },
+                            groups: {
+                                person: {color: {background: '#ffcccb'}},
+                                organization: {color: {background: '#c6ebc9'}},
+                                location: {color: {background: '#a7c5eb'}},
+                                concept: {color: {background: '#f7d488'}},
+                                message: {color: {background: '#e8e8e8'}},
+                                unknown: {color: {background: '#cccccc'}}
+                            }
+                        };
+
+                        new vis.Network(graphContainer, networkData, options);
+                        $('#btn-load-graph').html('<i class="fas fa-check"></i> Graph Loaded').removeClass('btn-outline-success').addClass('btn-success');
+                    } else {
+                        $('#knowledge-graph').html('<div class="alert alert-warning">No graph data available.</div>');
+                        $('#btn-load-graph').html('<i class="fas fa-exclamation-triangle"></i> No Data').prop('disabled', false);
+                    }
+                },
+                error: function() {
+                    $('#knowledge-graph').html('<div class="alert alert-danger">Error loading graph data.</div>');
+                    $('#btn-load-graph').html('<i class="fas fa-redo"></i> Try Again').prop('disabled', false);
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
