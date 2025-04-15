@@ -1,0 +1,8 @@
+Flask
+sentence-transformers
+chromadb-client
+spacy[en_core_web_sm]
+networkx
+google-generativeai
+python-dotenv
+pytest
