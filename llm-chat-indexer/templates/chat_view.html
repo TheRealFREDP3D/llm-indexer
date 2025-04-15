@@ -163,8 +163,8 @@
             $('#searchModal').modal('show');
         });
 
-        // Generate summary buttons
-        $('.generate-summary').click(function() {
+        // Generate summary buttons using event delegation
+        $(document).on('click', '.generate-summary', function() {
             const summaryType = $(this).data('type');
             const summaryElement = $(this).closest('.summary-content');
 
