@@ -2,7 +2,7 @@
 
 This guide outlines the steps to build the LLM Chat Indexer based on the project description.
 
-## 1. Understand the Goal
+## [X]1. Understand the Goal
 
 *   **Review Vision:** Familiarize yourself with the project's goal: transforming chat logs into a searchable, summarizable knowledge base with a knowledge graph visualization.
 *   **Core Principles:** Keep the modular, API-first architecture in mind. Use Python and leverage appropriate libraries.
