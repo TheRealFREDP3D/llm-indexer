@@ -64,11 +64,27 @@
             </div>
             <div class="card-body">
                 <div id="chat-content">
-                    <!-- This would be populated with actual chat messages -->
-                    <div class="text-center text-muted py-5">
-                        <i class="fas fa-comments fa-3x mb-3"></i>
-                        <p>Chat content would be displayed here.</p>
-                    </div>
+                    {% if chat_data %}
+                        <div class="mb-3">
+                            <small class="text-muted">Original file: {{ filename }}</small>
+                        </div>
+                        {% for message in chat_data %}
+                            <div class="chat-message {% if message.role == 'user' %}user-message{% elif message.role == 'assistant' %}assistant-message{% endif %}">
+                                <div class="message-role">{{ message.role|capitalize }}</div>
+                                <div class="message-content">{{ message.content }}</div>
+                                {% if message.timestamp %}
+                                    <div class="message-timestamp text-muted small mt-1 text-end">
+                                        {{ message.timestamp }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-comments fa-3x mb-3"></i>
+                            <p>No chat content available.</p>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
