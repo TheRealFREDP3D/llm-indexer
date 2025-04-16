@@ -141,9 +141,36 @@ def search_chats():
 def view_chat(chat_id):
     """View a specific chat with options for summaries and knowledge graph."""
     try:
-        # Get the chat data (this would need to be implemented)
-        # For now, we'll just show the chat ID and provide summary/graph options
-        return render_template('chat_view.html', chat_id=chat_id)
+        # Get the chat data from the raw file
+        chat_data = None
+        file_path = None
+
+        # Look for the chat file in the upload folder
+        for filename in os.listdir(UPLOAD_FOLDER):
+            if filename.startswith(chat_id):
+                file_path = os.path.join(UPLOAD_FOLDER, filename)
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+
+                # Parse the content based on file extension
+                if filename.endswith('.json'):
+                    parser = JSONParser()
+                elif filename.endswith('.md'):
+                    parser = MarkdownParser()
+                else:  # Default to markdown for .txt
+                    parser = MarkdownParser()
+
+                chat_data = parser.parse(content)
+                break
+
+        if not chat_data:
+            flash('Chat data not found', 'error')
+            return redirect(url_for('index'))
+
+        # Get the original filename without the chat_id prefix
+        original_filename = os.path.basename(file_path).replace(f"{chat_id}_", "") if file_path else ""
+
+        return render_template('chat_view.html', chat_id=chat_id, chat_data=chat_data, filename=original_filename)
 
     except Exception as e:
         flash(f'Error loading chat: {str(e)}', 'error')
@@ -156,9 +183,33 @@ def get_summary(chat_id):
     summary_type = request.args.get('type', 'gist')
 
     try:
-        # This would need to retrieve the chat data first
-        # For now, we'll return a placeholder
-        summary = f"Summary of chat {chat_id} ({summary_type})"
+        # Get the chat data from the raw file
+        # In a real implementation, you would retrieve this from a database
+        chat_data = None
+
+        # Look for the chat file in the upload folder
+        for filename in os.listdir(UPLOAD_FOLDER):
+            if filename.startswith(chat_id):
+                file_path = os.path.join(UPLOAD_FOLDER, filename)
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+
+                # Parse the content based on file extension
+                if filename.endswith('.json'):
+                    parser = JSONParser()
+                elif filename.endswith('.md'):
+                    parser = MarkdownParser()
+                else:  # Default to markdown for .txt
+                    parser = MarkdownParser()
+
+                chat_data = parser.parse(content)
+                break
+
+        if not chat_data:
+            return jsonify({'error': 'Chat data not found'}), 404
+
+        # Generate the summary
+        summary = generate_summary(chat_data, summary_type)
         return jsonify({'summary': summary})
 
     except Exception as e:

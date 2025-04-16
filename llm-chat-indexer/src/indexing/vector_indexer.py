@@ -75,8 +75,11 @@ class VectorIndexer:
         
         # Generate embeddings and add to the collection
         if documents:
+            # Generate embeddings using the initialized model
+            embeddings = self.model.encode(documents).tolist()
             collection.add(
                 documents=documents,
+                embeddings=embeddings, # Pass the generated embeddings
                 metadatas=metadatas,
                 ids=ids
             )
