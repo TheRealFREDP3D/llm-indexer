@@ -1,4 +1,3 @@
-```markdown
 # LLM Chat Indexer Project Review
 
 ## Overall Architecture
