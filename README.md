@@ -1,222 +1,312 @@
 # LLM Chat Indexer
 
-A powerful tool for transforming raw LLM chat logs into an intelligent, multi-faceted knowledge base. This project enables semantic search, summarization, and knowledge graph visualization of your chat data.
+![Screenshot](assets/v0.1.5-screenshot.jpg)
 
-![LLM Chat Indexer](https://via.placeholder.com/800x400?text=LLM+Chat+Indexer)
+A web application for indexing, searching, and analyzing chat conversations with large language models (LLMs).
 
-## 🌟 Features
+## Features
 
-- **Multi-format Parsing**: Support for JSON and Markdown chat logs
-- **Semantic Search**: Find relevant information across your chat history using natural language queries
-- **Summarization**: Generate concise summaries of chat conversations using Google's Gemini API
-- **Knowledge Graph**: Visualize conceptual connections between entities mentioned in chats
-- **Web Interface**: User-friendly interface for uploading, searching, and exploring chat data
-- **API-First Design**: Core functionality accessible via API for integration with other tools
+- **Chat Indexing**: Upload and index chat logs in JSON or Markdown format
+- **Semantic Search**: Search across your chat history using natural language queries
+- **Knowledge Graph Generation**: Automatically extract entities and relationships from chats
+- **Chat Summarization**: Generate concise summaries of chat conversations
+- **Web Interface**: User-friendly web interface for all functionality
 
-## 🏗️ Architecture
+## Table of Contents
 
-The project follows a modular, API-first architecture:
+- [Installation](#installation)
+  - [Prerequisites](#prerequisites)
+  - [Setup](#setup)
+  - [Environment Variables](#environment-variables)
+- [Usage](#usage)
+  - [Starting the Application](#starting-the-application)
+  - [Uploading Chats](#uploading-chats)
+  - [Searching Chats](#searching-chats)
+  - [Generating Summaries](#generating-summaries)
+  - [Exploring Knowledge Graphs](#exploring-knowledge-graphs)
+- [API Reference](#api-reference)
+- [Development](#development)
+  - [Running Tests](#running-tests)
+  - [Project Structure](#project-structure)
+- [License](#license)
 
-- **Core Logic**: Parsing, indexing, search, summarization, and graph generation are independent of the presentation layer
-- **Data Flow**: Files → Parse → Standardized Format → Index/Summarize/Build Graph → Store → Query/Visualize via API → Present in UI
-- **Technology**: Python-centric, leveraging powerful libraries for NLP, vector search, graph analysis, and web development
-
-## 📁 Project Structure
-
-```text
-llm-chat-indexer/
-├── .env                  # Environment variables (API keys, paths)
-├── .gitignore
-├── config/
-│   └── settings.py       # Configuration loading and constants
-├── data/                 # Default storage for indexes, graphs, etc.
-│   ├── raw_chats/        # Place raw chat logs here
-│   ├── vector_store/     # ChromaDB index files
-│   └── knowledge_graphs/ # Saved graph files
-├── notebooks/            # Jupyter notebooks for experimentation
-├── requirements.txt      # Project dependencies
-├── run.py                # Main entry point to start the web server
-├── src/
-│   ├── __init__.py
-│   ├── parsing/          # Handles different chat log formats
-│   │   ├── __init__.py
-│   │   ├── base_parser.py
-│   │   ├── json_parser.py
-│   │   └── md_parser.py
-│   ├── indexing/         # Text indexing and vector embedding
-│   │   ├── __init__.py
-│   │   └── vector_indexer.py
-│   ├── search/           # Search logic (semantic)
-│   │   ├── __init__.py
-│   │   └── semantic_search.py
-│   ├── summarization/    # Chat summarization logic
-│   │   ├── __init__.py
-│   │   └── distiller.py
-│   ├── knowledge_graph/  # Knowledge graph generation
-│   │   ├── __init__.py
-│   │   └── builder.py
-│   ├── llm_clients/      # Abstraction for interacting with LLMs
-│   │   ├── __init__.py
-│   │   └── gemini_client.py
-│   └── utils/            # Shared utility functions
-│       ├── __init__.py
-│       └── text_utils.py
-├── static/               # Static assets for web interface
-│   └── css/
-├── templates/            # HTML templates for web interface
-└── tests/                # Unit and integration tests
-```
-
-## 🚀 Installation
+## Installation
 
 ### Prerequisites
 
 - Python 3.8 or higher
 - pip (Python package installer)
+- ChromaDB (for vector storage)
+- Google Gemini API key (for summarization and entity extraction)
 
 ### Setup
 
 1. Clone the repository:
 
-   ```bash
-   git clone https://github.com/yourusername/llm-chat-indexer.git
-   cd llm-chat-indexer
-   ```
+```bash
+git clone https://github.com/yourusername/llm-chat-indexer.git
+cd llm-chat-indexer
+```
 
-2. Create a virtual environment (optional but recommended):
+2. Create and activate a virtual environment:
 
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+```bash
+# On Windows
+python -m venv venv
+venv\Scripts\activate
 
-3. Install dependencies:
+# On macOS/Linux
+python -m venv venv
+source venv/bin/activate
+```
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+3. Install the required packages:
 
-4. Download the spaCy model:
+```bash
+pip install -r requirements.txt
+```
 
-   ```bash
-   python -m spacy download en_core_web_sm
-   ```
+4. Create a `.env` file based on the provided `.env.example`:
 
-5. Create a `.env` file in the project root with your API keys:
+```bash
+cp .env.example .env
+```
 
-   ```env
-   GEMINI_API_KEY=your_gemini_api_key
-   VECTOR_STORE_PATH=./data/vector_store
-   KG_PATH=./data/knowledge_graphs
-   ```
+5. Edit the `.env` file and add your API keys and configuration settings.
 
-## 🔧 Usage
+6. Validate your configuration:
 
-### Running the Web Interface
+```bash
+python scripts/validate_config.py
+```
 
-1. Start the Flask application:
+### Environment Variables
 
-   ```bash
-   python run.py
-   ```
+The following environment variables can be set in the `.env` file:
 
-2. Open your browser and navigate to `http://localhost:5000`
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `VECTOR_STORE_PATH` | Path to store vector embeddings | `./data/vector_store` |
+| `KG_PATH` | Path to store knowledge graphs | `./data/knowledge_graphs` |
+| `GEMINI_API_KEY` | Google Gemini API key | None (required for summarization) |
+| `SENTENCE_TRANSFORMER_MODEL` | Model for generating embeddings | `all-MiniLM-L6-v2` |
+| `CHUNK_SIZE` | Size of text chunks for embedding | `1000` |
+| `CHUNK_OVERLAP` | Overlap between consecutive chunks | `200` |
+| `TOP_K_RESULTS` | Number of results to return in search | `5` |
+| `CHROMA_SERVER_HOST` | Host for ChromaDB server | `localhost` |
+| `CHROMA_SERVER_HTTP_PORT` | Port for ChromaDB server | `8000` |
+| `ALLOW_RESET` | Whether to allow resetting the database | `True` |
 
-3. Upload chat logs (JSON or Markdown format)
+## Usage
 
-4. Use the search functionality to find relevant information
+### Starting the Application
 
-5. View chat details, summaries, and knowledge graphs
+#### Option 1: All-in-One Startup Script (Recommended)
 
-### Supported Chat Formats
+Use the unified startup script that checks dependencies, starts ChromaDB, and runs the Flask application:
 
-#### JSON Format
+```bash
+python start_app.py
+```
 
+#### Option 2: Manual Startup
+
+1. Check and install dependencies:
+
+```bash
+python scripts/check_dependencies.py
+```
+
+2. Start the ChromaDB server (optional, for better performance):
+
+```bash
+python scripts/start_chroma.py
+# or
+python run_chroma_server.py
+```
+
+3. Run the web application:
+
+```bash
+python run.py
+```
+
+4. Open your browser and navigate to `http://localhost:5000`
+
+### Uploading Chats
+
+1. From the home page, click the "Upload Chat" button
+2. Select a JSON or Markdown file containing your chat conversation
+3. Click "Upload" to process and index the chat
+4. The application will automatically extract entities and build a knowledge graph
+
+#### Supported File Formats
+
+- **JSON**: A JSON file with a `messages` array containing objects with `role` and `content` fields
+- **Markdown**: A Markdown file with messages formatted as `**User**:` and `**Assistant**:` headers
+
+Example JSON format:
 ```json
-[
-  {
-    "role": "user",
-    "content": "Hello, how can you help me with my project?"
-  },
-  {
-    "role": "assistant",
-    "content": "I can help you by providing information, generating code, and answering questions about your project."
-  }
-]
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hello, how are you?",
+      "timestamp": "2023-01-01T12:00:00Z"
+    },
+    {
+      "role": "assistant",
+      "content": "I'm doing well, thank you for asking!",
+      "timestamp": "2023-01-01T12:00:05Z"
+    }
+  ]
+}
 ```
 
-#### Markdown Format
-
+Example Markdown format:
 ```markdown
-# User
-Hello, how can you help me with my project?
+# Chat Session
 
-# Assistant
-I can help you by providing information, generating code, and answering questions about your project.
+**User**: Hello, how are you?
+
+**Assistant**: I'm doing well, thank you for asking!
 ```
 
-## 📊 Core Components
+### Searching Chats
 
-### Parsing
+1. Use the search bar at the top of any page to search across all indexed chats
+2. Enter a natural language query and press Enter
+3. View the search results, which will show matching messages from your chats
+4. Click on a result to view the full context of the conversation
 
-The system supports parsing chat logs in JSON and Markdown formats, converting them into a standardized internal representation.
+### Generating Summaries
 
-### Indexing
+1. Navigate to a specific chat by clicking on its ID from the home page
+2. Click the "Generate Summary" button
+3. Choose the summary type (gist or key points)
+4. View the generated summary of the conversation
 
-Chat data is chunked, embedded using Sentence Transformers, and stored in ChromaDB for efficient retrieval.
+### Exploring Knowledge Graphs
 
-### Semantic Search
+1. Navigate to a specific chat by clicking on its ID from the home page
+2. Click the "View Knowledge Graph" button
+3. Explore the interactive visualization of entities and relationships
+4. Hover over nodes to see entity details and connections
 
-Search functionality uses the same embedding model to find semantically relevant chunks across all indexed chats.
+## API Reference
 
-### Summarization
+The application provides a REST API for programmatic access to its functionality.
 
-The Gemini API is used to generate concise summaries of chat conversations, extracting key points and insights.
+### Endpoints
 
-### Knowledge Graph
+#### GET /api/graph/{chat_id}
 
-spaCy and NetworkX are used to extract entities and relationships from chats, creating a navigable knowledge graph.
+Returns the knowledge graph for a specific chat.
 
-## 🔌 API Reference
+Query Parameters:
+- `format` (optional): The format of the graph data (`json` or `cytoscape`). Default: `json`
 
-### Main Endpoints
+Example:
+```bash
+curl http://localhost:5000/api/graph/24f0b044-aae3-47e3-a294-afbad939cd24?format=json
+```
 
-- **GET /** - Home page with upload form and list of indexed chats
-- **POST /upload** - Upload and index a new chat file
-- **GET /search** - Search indexed chats with a query parameter
-- **GET /chat/{chat_id}** - View a specific chat with options for summary and knowledge graph
-- **GET /api/summary/{chat_id}** - Get a summary of a specific chat
-- **GET /api/graph/{chat_id}** - Get knowledge graph data for a specific chat
+#### GET /summary/{chat_id}
 
-## 🤝 Contributing
+Generates a summary for a specific chat.
 
-Contributions are welcome! Here are some ways you can contribute:
+Query Parameters:
+- `type` (optional): The type of summary to generate (`gist` or `key_points`). Default: `gist`
 
-1. Report bugs and suggest features by opening issues
-2. Submit pull requests with bug fixes or new features
-3. Improve documentation
-4. Add support for new chat formats
-5. Enhance the web interface
+Example:
+```bash
+curl http://localhost:5000/summary/24f0b044-aae3-47e3-a294-afbad939cd24?type=key_points
+```
 
-Please follow these steps for contributing:
+#### GET /search
 
-1. Fork the repository
-2. Create a new branch (`git checkout -b feature/your-feature`)
-3. Make your changes
-4. Run tests to ensure they pass
-5. Commit your changes (`git commit -m 'Add some feature'`)
-6. Push to the branch (`git push origin feature/your-feature`)
-7. Open a pull request
+Searches across indexed chats.
 
-## 📝 License
+Query Parameters:
+- `query` (required): The search query
+- `chat_id` (optional): Limit search to a specific chat
+
+Example:
+```bash
+curl http://localhost:5000/search?query=renewable+energy
+```
+
+## Documentation
+
+Detailed documentation is available in the following files:
+
+- [User Guide](docs/user_guide.md): Instructions for using the application
+- [Developer Guide](docs/developer_guide.md): Information for developers
+- [File Format Specification](docs/file_formats.md): Details about supported file formats
+- [API Documentation](API.md): Reference for the REST API
+- [Setup Guide](SETUP.md): Instructions for setting up the application
+
+API documentation is also available through the Swagger UI at `/api/docs` when the application is running.
+
+## Development
+
+### Running Tests
+
+Run all tests:
+
+```bash
+python run_tests.py
+```
+
+Run specific test modules:
+
+```bash
+python run_tests.py --module test_parsing
+```
+
+Run with coverage report:
+
+```bash
+python run_tests.py --coverage
+```
+
+### Project Structure
+
+```text
+llm-chat-indexer/
+├── config/                 # Configuration settings
+│   ├── settings.py         # Application settings
+│   └── config.py           # Configuration management
+├── data/                   # Data storage
+│   ├── knowledge_graphs/   # Stored knowledge graphs
+│   ├── raw_chats/          # Uploaded chat files
+│   └── vector_store/       # Vector embeddings
+├── scripts/                # Utility scripts
+│   ├── check_dependencies.py # Script to check and install dependencies
+│   ├── start_chroma.py     # Script to start ChromaDB server
+│   └── validate_config.py  # Configuration validation
+├── src/                    # Source code
+│   ├── api/                # API documentation and endpoints
+│   ├── indexing/           # Chat indexing functionality
+│   ├── knowledge_graph/    # Knowledge graph generation
+│   ├── llm_clients/        # LLM API clients
+│   ├── parsing/            # Chat file parsing
+│   ├── search/             # Semantic search functionality
+│   ├── summarization/      # Chat summarization
+│   └── utils/              # Utility functions
+├── static/                 # Static web assets
+│   └── css/                # CSS stylesheets
+├── templates/              # HTML templates
+├── tests/                  # Test suite
+├── .env.example            # Example environment variables
+├── requirements.txt        # Python dependencies
+├── requirements-dev.txt    # Development dependencies
+├── run.py                  # Main application entry point
+├── run_chroma_server.py    # Script to run ChromaDB server
+├── run_tests.py            # Test runner
+└── start_app.py            # Unified startup script
+```
+
+## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgements
-
-- [Sentence Transformers](https://www.sbert.net/) for text embeddings
-- [ChromaDB](https://www.trychroma.com/) for vector storage
-- [spaCy](https://spacy.io/) for NLP processing
-- [NetworkX](https://networkx.org/) for graph operations
-- [Google Generative AI](https://ai.google.dev/) for the Gemini API
-- [Flask](https://flask.palletsprojects.com/) for the web framework

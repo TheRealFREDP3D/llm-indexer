@@ -1,27 +1,47 @@
+import logging
 import os
 import uuid
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
-from werkzeug.utils import secure_filename
 
 # Import configuration
-from config.settings import VECTOR_STORE_PATH, KG_PATH
+from config.config import config
+from flask import Flask, flash, jsonify, redirect, render_template, request, url_for
+
+# Import Swagger documentation
+from src.api.swagger import API_URL, SWAGGER_URL, swagger_spec, swagger_ui_blueprint
+from src.indexing import get_collection_names, index_chat
+from src.knowledge_graph import build_graph, export_graph_for_vis, save_graph
 
 # Import modules
 from src.parsing import JSONParser, MarkdownParser
-from src.indexing import index_chat, get_collection_names
 from src.search import search, search_all_collections
 from src.summarization import generate_summary
-from src.knowledge_graph import build_graph, save_graph, export_graph_for_vis
+from werkzeug.utils import secure_filename
 
 # Initialize Flask app
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # For flash messages
 
+# Register Swagger UI blueprint
+app.register_blueprint(swagger_ui_blueprint, url_prefix=SWAGGER_URL)
+
+# Endpoint to serve the Swagger JSON specification
+@app.route(API_URL)
+def swagger_json():
+    """Return the Swagger JSON specification."""
+    return jsonify(swagger_spec)
+
 # Add template context processor to provide current year
 @app.context_processor
 def inject_now():
     return {'now': datetime.now()}
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Configure upload folder
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'raw_chats')
@@ -226,9 +246,37 @@ def get_graph_data(chat_id):
         graph_data = export_graph_for_vis(chat_id, format=format_type)
         return jsonify(graph_data)
 
+    except FileNotFoundError as e:
+        logger.warning(f"Knowledge graph not found for chat {chat_id}: {str(e)}")
+        # Return an empty graph structure instead of an error
+        if format_type == 'json':
+            return jsonify({'nodes': [], 'links': []})
+        elif format_type == 'cytoscape':
+            return jsonify({'elements': []})
+        else:
+            return jsonify({'error': f'Unsupported format: {format_type}'}), 400
+
     except Exception as e:
+        logger.error(f"Error retrieving graph data for chat {chat_id}: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Validate configuration before starting the app
+    try:
+        # Log configuration values for debugging
+        logger.info("Starting application with the following configuration:")
+        logger.info(f"VECTOR_STORE_PATH: {config.VECTOR_STORE_PATH}")
+        logger.info(f"KG_PATH: {config.KG_PATH}")
+        logger.info(f"SENTENCE_TRANSFORMER_MODEL: {config.SENTENCE_TRANSFORMER_MODEL}")
+        logger.info(f"API Documentation: http://localhost:5000{SWAGGER_URL}")
+
+        # Check for required API keys
+        if not config.GEMINI_API_KEY:
+            logger.warning("GEMINI_API_KEY is not set. Summarization features will not work.")
+
+        # Start the Flask app
+        app.run(debug=True)
+    except Exception as e:
+        logger.error(f"Error starting application: {str(e)}")
+        raise

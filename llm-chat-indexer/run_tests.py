@@ -1,50 +1,61 @@
 """
 Test runner script to run all tests or specific test modules.
+
+This script uses pytest to run tests for the LLM Chat Indexer.
+It supports running specific test modules, test types (unit, integration),
+and provides options for test coverage reporting.
 """
 
-import unittest
 import sys
 import argparse
+import pytest
 
 
-def run_tests(test_module=None):
+def run_tests(test_module=None, test_type=None, coverage=False):
     """
-    Run tests in the tests directory.
+    Run tests using pytest.
 
     Args:
         test_module (str, optional): Specific test module to run (e.g., 'test_parsing').
             If None, runs all tests.
+        test_type (str, optional): Type of tests to run ('unit' or 'integration').
+            If None, runs all tests.
+        coverage (bool, optional): Whether to generate a coverage report.
 
     Returns:
-        int: 0 if tests were successful, 1 otherwise.
+        int: pytest exit code (0 for success).
     """
-    # Set up the test runner
-    test_runner = unittest.TextTestRunner(verbosity=2)
+    # Base pytest arguments
+    pytest_args = ['-v', '--color=yes']
 
+    # Add coverage if requested
+    if coverage:
+        pytest_args.extend(['--cov=src', '--cov-report=term', '--cov-report=html'])
+
+    # Add test module if specified
     if test_module:
-        # Run a specific test module
-        print(f"Running tests in {test_module}...")
-        try:
-            module = __import__(f'tests.{test_module}', fromlist=[''])
-            test_suite = unittest.defaultTestLoader.loadTestsFromModule(module)
-            result = test_runner.run(test_suite)
-        except ImportError:
-            print(f"Error: Test module 'tests.{test_module}' not found.")
-            return 1
+        if not test_module.startswith('test_'):
+            test_module = f'test_{test_module}'
+        pytest_args.append(f'tests/{test_module}.py')
     else:
-        # Discover and run all tests
-        print("Running all tests...")
-        test_suite = unittest.defaultTestLoader.discover('tests')
-        result = test_runner.run(test_suite)
+        pytest_args.append('tests')
 
-    # Return non-zero exit code if tests failed
-    return 0 if result.wasSuccessful() else 1
+    # Add test type marker if specified
+    if test_type:
+        pytest_args.append(f'-m {test_type}')
+
+    # Run pytest
+    print(f"Running pytest with args: {' '.join(pytest_args)}")
+    return pytest.main(pytest_args)
 
 
 if __name__ == "__main__":
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Run tests for LLM Chat Indexer.')
-    parser.add_argument('--module', type=str, help='Specific test module to run (e.g., test_parsing)')
+    parser.add_argument('--module', type=str, help='Specific test module to run (e.g., parsing)')
+    parser.add_argument('--type', type=str, choices=['unit', 'integration'],
+                        help='Type of tests to run (unit or integration)')
+    parser.add_argument('--coverage', action='store_true', help='Generate coverage report')
     args = parser.parse_args()
 
-    sys.exit(run_tests(args.module))
+    sys.exit(run_tests(args.module, args.type, args.coverage))
