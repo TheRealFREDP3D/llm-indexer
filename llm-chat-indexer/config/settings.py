@@ -1,33 +1,42 @@
-import os
-from pathlib import Path
-from dotenv import load_dotenv
+"""
+Configuration settings for the LLM Chat Indexer application.
 
-# Load environment variables from .env file
-load_dotenv()
+This module provides access to configuration settings through the Configuration class.
+It exports the configuration values as module-level variables for backward compatibility.
+
+For new code, it's recommended to use the Configuration class directly:
+    from config.config import config
+    value = config.get('SETTING_NAME')
+"""
+
+from pathlib import Path
+
+# Import the Configuration class
+from config.config import config
+
+# Export configuration values as module-level variables for backward compatibility
 
 # Base directory
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Data storage paths
-VECTOR_STORE_PATH = os.getenv('VECTOR_STORE_PATH', './data/vector_store')
-KG_PATH = os.getenv('KG_PATH', './data/knowledge_graphs')
-
-# Ensure paths are absolute
-if not os.path.isabs(VECTOR_STORE_PATH):
-    VECTOR_STORE_PATH = os.path.join(BASE_DIR, VECTOR_STORE_PATH)
-
-if not os.path.isabs(KG_PATH):
-    KG_PATH = os.path.join(BASE_DIR, KG_PATH)
+VECTOR_STORE_PATH = config.VECTOR_STORE_PATH
+KG_PATH = config.KG_PATH
 
 # API Keys
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+GEMINI_API_KEY = config.GEMINI_API_KEY
 
 # Application constants
-SENTENCE_TRANSFORMER_MODEL = 'all-MiniLM-L6-v2'  # Default model for embeddings
-CHUNK_SIZE = 1000  # Default chunk size for text splitting
-CHUNK_OVERLAP = 200  # Default overlap between chunks
-TOP_K_RESULTS = 5  # Default number of results to return in search
+SENTENCE_TRANSFORMER_MODEL = config.SENTENCE_TRANSFORMER_MODEL
+CHUNK_SIZE = config.CHUNK_SIZE
+CHUNK_OVERLAP = config.CHUNK_OVERLAP
+TOP_K_RESULTS = config.TOP_K_RESULTS
 
-# Ensure data directories exist
-os.makedirs(VECTOR_STORE_PATH, exist_ok=True)
-os.makedirs(KG_PATH, exist_ok=True)
+# ChromaDB settings
+CHROMA_SETTINGS = config.CHROMA_SETTINGS
+CHROMA_SERVER_SETTINGS = config.CHROMA_SERVER_SETTINGS
+
+# ChromaDB server configuration
+CHROMA_SERVER_HOST = config.CHROMA_SERVER_HOST
+CHROMA_SERVER_HTTP_PORT = config.CHROMA_SERVER_HTTP_PORT
+ALLOW_RESET = config.ALLOW_RESET

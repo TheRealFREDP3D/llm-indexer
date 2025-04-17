@@ -4,7 +4,7 @@
 
 {% block extra_css %}
 <!-- Vis.js for graph visualization -->
-<link rel="stylesheet" href="https://unpkg.com/vis-network/dist/dist/vis-network.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/vis-network.min.css') }}">
 <style>
     #knowledge-graph {
         width: 100%;
@@ -171,9 +171,16 @@
 
 {% block extra_js %}
 <!-- Vis.js for graph visualization -->
-<script src="https://unpkg.com/vis-network/dist/dist/vis-network.min.js"></script>
+<script src="{{ url_for('static', filename='js/vis-network.min.js') }}"></script>
 <script>
     $(document).ready(function() {
+        // Check if vis.js is loaded
+        if (typeof vis === 'undefined') {
+            console.error('vis.js library is not loaded!');
+            $('#knowledge-graph').html('<div class="alert alert-danger">Error: vis.js library is not loaded. Please check your internet connection and try again.</div>');
+        } else {
+            console.log('vis.js library is loaded successfully. Version:', vis.version);
+        }
         // Search in this chat button
         $('#btn-search-this-chat').click(function() {
             $('#searchModal').modal('show');
@@ -214,13 +221,16 @@
                 url: `/api/graph/{{ chat_id }}?format=cytoscape`,
                 method: 'GET',
                 success: function(data) {
-                    if (data && data.elements) {
+                    console.log('Graph data received:', data);
+
+                    if (data && data.elements && data.elements.length > 0) {
                         // Create network visualization
                         const nodes = [];
                         const edges = [];
 
                         // Process nodes
                         data.elements.forEach(function(element) {
+                            console.log('Processing element:', element);
                             if (element.data.source === undefined) {
                                 // This is a node
                                 nodes.push({
@@ -239,13 +249,19 @@
                             }
                         });
 
-                        // Create the network
-                        const networkData = {
-                            nodes: new vis.DataSet(nodes),
-                            edges: new vis.DataSet(edges)
-                        };
+                        console.log('Processed nodes:', nodes.length, 'edges:', edges.length);
 
-                        const options = {
+                        // Create the network
+                        console.log('Creating network with nodes:', nodes);
+                        console.log('Creating network with edges:', edges);
+
+                        try {
+                            const networkData = {
+                                nodes: new vis.DataSet(nodes),
+                                edges: new vis.DataSet(edges)
+                            };
+
+                            const options = {
                             nodes: {
                                 shape: 'dot',
                                 size: 16,
@@ -282,15 +298,25 @@
                             }
                         };
 
-                        new vis.Network(graphContainer, networkData, options);
-                        $('#btn-load-graph').html('<i class="fas fa-check"></i> Graph Loaded').removeClass('btn-outline-success').addClass('btn-success');
+                            console.log('Creating vis.Network with options:', options);
+                            new vis.Network(graphContainer, networkData, options);
+                            console.log('Network created successfully');
+                            $('#btn-load-graph').html('<i class="fas fa-check"></i> Graph Loaded').removeClass('btn-outline-success').addClass('btn-success');
+                        } catch (error) {
+                            console.error('Error creating network:', error);
+                            $('#knowledge-graph').html('<div class="alert alert-danger">Error creating network: ' + error.message + '</div>');
+                            $('#btn-load-graph').html('<i class="fas fa-redo"></i> Try Again').prop('disabled', false);
+                        }
                     } else {
-                        $('#knowledge-graph').html('<div class="alert alert-warning">No graph data available.</div>');
+                        console.log('No graph elements found or empty graph data');
+                        $('#knowledge-graph').html('<div class="alert alert-warning">No graph data available. The knowledge graph may be empty for this chat.</div>');
                         $('#btn-load-graph').html('<i class="fas fa-exclamation-triangle"></i> No Data').prop('disabled', false);
                     }
                 },
-                error: function() {
-                    $('#knowledge-graph').html('<div class="alert alert-danger">Error loading graph data.</div>');
+                error: function(xhr, status, error) {
+                    console.error('Error loading graph data:', status, error);
+                    console.log('Response:', xhr.responseText);
+                    $('#knowledge-graph').html('<div class="alert alert-danger">Error loading graph data: ' + error + '</div>');
                     $('#btn-load-graph').html('<i class="fas fa-redo"></i> Try Again').prop('disabled', false);
                 }
             });

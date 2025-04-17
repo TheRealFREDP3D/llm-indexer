@@ -1,8 +1,7 @@
 """
-Indexing module for LLM Chat Indexer.
-Contains functionality for embedding and storing chat data.
+Indexing functionality for chat data.
 """
 
-from src.indexing.vector_indexer import index_chat, get_collection_names
+from .langchain_indexer import get_collection_names, index_chat
 
 __all__ = ['index_chat', 'get_collection_names']
