@@ -1,5 +1,9 @@
 # LLM Chat Indexer
 
+Heavy Usage of AI was made to try to build this.  
+
+---
+
 ![Screenshot](assets/v0.1.5-screenshot.jpg)
 
 A web application for indexing, searching, and analyzing chat conversations with large language models (LLMs).
